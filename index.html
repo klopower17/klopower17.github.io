@@ -1,0 +1,245 @@
+
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GPX/RTE 生成器 v7.5</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
+        body { font-family: 'Inter', -apple-system, sans-serif; background-color: #f8fafc; }
+        .card { background: white; border-radius: 1rem; box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1); }
+        .fixed-scroll-area { height: 350px; overflow-y: auto; scrollbar-width: thin; scrollbar-color: #cbd5e1 transparent; }
+        .fixed-scroll-area::-webkit-scrollbar { width: 6px; }
+        .fixed-scroll-area::-webkit-scrollbar-thumb { background-color: #cbd5e1; border-radius: 10px; }
+        .btn-action { transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1); }
+        .btn-action:active { transform: scale(0.96); }
+        .btn-gray { background-color: #64748b; color: white; }
+        .btn-gray:hover { background-color: #475569; }
+        
+        #toast {
+            visibility: hidden; min-width: 220px; background-color: #1e293b; color: #fff;
+            text-align: center; border-radius: 12px; padding: 14px; position: fixed;
+            z-index: 100; left: 50%; bottom: 30px; transform: translateX(-50%); font-size: 14px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        }
+        #toast.show { visibility: visible; animation: fadein 0.5s, fadeout 0.5s 1.5s; }
+        @keyframes fadein { from {bottom: 0; opacity: 0;} to {bottom: 30px; opacity: 1;} }
+        @keyframes fadeout { from {bottom: 30px; opacity: 1;} to {bottom: 0; opacity: 0;} }
+    </style>
+</head>
+<body class="min-h-screen py-10 px-4">
+    <div class="max-w-6xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-8">
+        
+        <!-- 左側：輸入與設定 -->
+        <div class="card flex flex-col border border-slate-200 overflow-hidden">
+            <div class="bg-indigo-600 p-6 text-white">
+                <h1 class="text-2xl font-bold flex items-center gap-2">
+                    GPX 生成器 <span class="text-xs bg-indigo-400 px-2 py-1 rounded">v7.5</span>
+                </h1>
+                <p class="text-indigo-100 text-xs mt-1 italic">學術研究用</p>
+            </div>
+            
+            <div class="p-8 space-y-6 flex-1">
+                <div class="grid grid-cols-2 gap-6 text-xs font-bold text-slate-500">
+                    <div class="flex flex-col uppercase tracking-widest">
+                        繞圈半徑 (m)
+                        <input id="radius" type="number" value="30" class="border border-slate-200 rounded-lg p-3 text-slate-700 outline-none mt-2 focus:ring-2 focus:ring-indigo-500">
+                    </div>
+                    <div class="flex flex-col uppercase tracking-widest">
+                        前進偏移 (m)
+                        <input id="offsetDist" type="number" value="0" class="border border-slate-200 rounded-lg p-3 text-slate-700 outline-none mt-2 focus:ring-2 focus:ring-indigo-500">
+                    </div>
+                </div>
+
+                <div class="flex flex-col flex-1">
+                    <div class="flex justify-between items-end mb-3">
+                        <label class="text-sm font-bold text-slate-700">📌 輸入原始座標 (點位 A)</label>
+                        <div id="countBadge" class="bg-indigo-50 text-indigo-600 text-[10px] font-bold px-3 py-1 rounded-full uppercase tracking-widest">點位數：0</div>
+                    </div>
+                    <textarea id="coordsInput" class="w-full h-64 border-2 border-slate-100 rounded-2xl p-5 text-sm font-mono bg-slate-50 focus:bg-white focus:border-indigo-500 outline-none transition-all resize-none shadow-inner" 
+                        placeholder="請貼上座標 (每行一組)..." oninput="updateCount()"></textarea>
+                    
+                    <div class="mt-4 flex justify-start">
+                        <button onclick="clearData()" class="w-1/3 bg-pink-50 hover:bg-pink-100 text-pink-500 text-sm font-bold py-2.5 rounded-xl border border-pink-200 transition flex items-center justify-center gap-2 shadow-sm">
+                            🗑 清空資料
+                        </button>
+                    </div>
+                </div>
+
+                <div class="flex flex-col gap-4 pt-4 border-t border-slate-100">
+                    <div class="grid grid-cols-2 gap-4">
+                        <button onclick="process('gpx-track')" class="btn-action bg-green-600 hover:bg-green-700 text-white font-bold py-4 rounded-2xl shadow-lg">轉換 Track</button>
+                        <button onclick="process('gpx-route')" class="btn-action bg-indigo-500 hover:bg-indigo-600 text-white font-bold py-4 rounded-2xl shadow-lg">轉換 Route</button>
+                    </div>
+                    <button onclick="process('gpx-fruit')" class="btn-action bg-orange-500 hover:bg-orange-600 text-white font-bold py-5 rounded-2xl shadow-xl w-full text-lg">
+                        🍎 果實版：(種花_日期)
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 右側：結果預覽 -->
+        <div class="card flex flex-col border border-slate-200 overflow-hidden">
+            <div class="bg-slate-50 p-6 flex justify-between items-center border-b">
+                <h2 class="text-sm font-bold text-slate-500 uppercase tracking-widest">轉換結果預覽</h2>
+                <div class="flex gap-3">
+                    <button id="copyBtn" onclick="copyResult()" class="text-[11px] btn-gray px-4 py-2 rounded-xl transition font-bold shadow-sm">複製內容</button>
+                    <button onclick="downloadResult()" class="text-[11px] bg-indigo-600 hover:bg-indigo-500 px-4 py-2 rounded-xl transition font-bold text-white shadow-md">下載 GPX</button>
+                </div>
+            </div>
+            
+            <div class="p-8 flex-1 flex flex-col space-y-6">
+                <div class="grid grid-cols-2 gap-6">
+                    <div class="bg-slate-50 border border-slate-100 rounded-2xl p-4 text-center">
+                        <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">總輸出點數</p>
+                        <p id="statPoints" class="text-2xl font-black text-slate-700">-</p>
+                    </div>
+                    <div class="bg-slate-50 border border-slate-100 rounded-2xl p-4 text-center">
+                        <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">預估距離 (KM)</p>
+                        <p id="statDistance" class="text-2xl font-black text-indigo-600">-</p>
+                    </div>
+                </div>
+
+                <div class="fixed-scroll-area border-2 border-slate-50 rounded-2xl bg-slate-900 relative">
+                    <pre id="resultArea" class="p-6 text-[11px] leading-relaxed font-mono text-indigo-200 whitespace-pre-wrap"></pre>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="toast">操作成功</div>
+    <textarea id="hiddenCopyText" style="position:absolute; left:-9999px;"></textarea>
+
+    <script>
+        let currentOutput = "";
+        let currentFile = "";
+
+        function showToast(msg) {
+            const t = document.getElementById("toast");
+            t.innerText = msg;
+            t.className = "show";
+            setTimeout(() => { t.className = ""; }, 2000);
+        }
+
+        function clearData() {
+            document.getElementById('coordsInput').value = '';
+            document.getElementById('resultArea').innerText = '';
+            document.getElementById('statPoints').innerText = '-';
+            document.getElementById('statDistance').innerText = '-';
+            document.getElementById('countBadge').innerText = '點位數：0';
+            currentOutput = ""; currentFile = "";
+            showToast("已清空資料");
+        }
+
+        function parseCoords(text) {
+            return text.split(/[\r\n]+/).map(line => {
+                const parts = line.match(/(-?\d+\.\d+)/g);
+                return parts && parts.length >= 2 ? { lat: parseFloat(parts[0]), lon: parseFloat(parts[1]) } : null;
+            }).filter(p => p);
+        }
+
+        function updateCount() {
+            const coords = parseCoords(document.getElementById('coordsInput').value);
+            document.getElementById('countBadge').innerText = `點位數：${coords.length}`;
+        }
+
+        function destinationVincenty(lat, lon, brng, dist) {
+            const R = 6378137; const d = dist / R;
+            const lat1 = lat * Math.PI / 180; const lon1 = lon * Math.PI / 180;
+            const brngRad = brng * Math.PI / 180;
+            const lat2 = Math.asin(Math.sin(lat1) * Math.cos(d) + Math.cos(lat1) * Math.sin(d) * Math.cos(brngRad));
+            const lon2 = lon1 + Math.atan2(Math.sin(brngRad) * Math.sin(d) * Math.cos(lat1), Math.cos(d) - Math.sin(lat1) * Math.sin(lat2));
+            return { lat: lat2 * 180 / Math.PI, lon: lon2 * 180 / Math.PI };
+        }
+
+        function calculateBearing(p1, p2) {
+            const lat1 = p1.lat * Math.PI / 180; const lat2 = p2.lat * Math.PI / 180;
+            const dLon = (p2.lon - p1.lon) * Math.PI / 180;
+            const y = Math.sin(dLon) * Math.cos(lat2);
+            const x = Math.cos(lat1) * Math.sin(lat2) - Math.sin(lat1) * Math.cos(lat2) * Math.cos(dLon);
+            return (Math.atan2(y, x) * 180 / Math.PI + 360) % 360;
+        }
+
+        function calcDistance(coords) {
+            if (coords.length < 2) return 0;
+            let total = 0; const R = 6371;
+            for (let i = 0; i < coords.length - 1; i++) {
+                const dLat = (coords[i+1].lat - coords[i].lat) * Math.PI / 180;
+                const dLon = (coords[i+1].lon - coords[i].lon) * Math.PI / 180;
+                const a = Math.sin(dLat/2)**2 + Math.cos(coords[i].lat * Math.PI / 180) * Math.cos(coords[i+1].lat * Math.PI / 180) * Math.sin(dLon/2)**2;
+                total += R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+            }
+            return total.toFixed(3);
+        }
+
+        function process(type) {
+            const rawCoords = parseCoords(document.getElementById('coordsInput').value);
+            if (rawCoords.length === 0) return alert('請輸入座標！');
+            
+            const radius = parseFloat(document.getElementById('radius').value);
+            const offset = parseFloat(document.getElementById('offsetDist').value);
+            let finalCoords = [];
+
+            const now = new Date();
+            const dateStr = (now.getMonth()+1).toString().padStart(2,'0') + now.getDate().toString().padStart(2,'0');
+
+            if (type === 'gpx-fruit') {
+                for (let i = 0; i < rawCoords.length; i++) {
+                    const A = rawCoords[i];
+                    finalCoords.push(A); 
+                    let bearing = (i < rawCoords.length - 1) ? calculateBearing(A, rawCoords[i+1]) : 0;
+                    const Center = destinationVincenty(A.lat, A.lon, bearing, offset);
+                    finalCoords.push(destinationVincenty(Center.lat, Center.lon, 45, radius));
+                    finalCoords.push(destinationVincenty(Center.lat, Center.lon, 135, radius));
+                    finalCoords.push(destinationVincenty(Center.lat, Center.lon, 225, radius));
+                    finalCoords.push(destinationVincenty(Center.lat, Center.lon, 315, radius));
+                }
+                const fileName = `(種花_${dateStr})`;
+                currentOutput = `<?xml version="1.0" encoding="UTF-8"?>\n<gpx version="1.1" creator="warmwind-gpx">\n  <metadata><name>${fileName}</name></metadata>\n  <rte>\n    <name>${fileName}</name>\n` +
+                                 finalCoords.map(c => `    <rtept lat="${c.lat.toFixed(10)}" lon="${c.lon.toFixed(10)}"></rtept>`).join('\n') +
+                                 `\n  </rte>\n</gpx>`;
+                currentFile = `${fileName}.gpx`;
+            } else {
+                finalCoords = rawCoords;
+                const ts = now.toISOString().replace(/[:.-]/g, "").slice(0, 14);
+                if (type === 'gpx-track') {
+                    currentOutput = `<?xml version="1.0" encoding="UTF-8"?>\n<gpx version="1.1">\n  <trk><name>Track_${ts}</name><trkseg>\n` +
+                                     finalCoords.map(c => `      <trkpt lat="${c.lat}" lon="${c.lon}"></trkpt>`).join('\n') +
+                                     `\n    </trkseg>\n  </trk>\n</gpx>`;
+                    currentFile = `Track_${ts}.gpx`;
+                } else {
+                    currentOutput = `<?xml version="1.0" encoding="UTF-8"?>\n<gpx version="1.1">\n  <rte><name>Route_${ts}</name>\n` +
+                                     finalCoords.map(c => `    <rtept lat="${c.lat}" lon="${c.lon}"></rtept>`).join('\n') +
+                                     `\n  </rte>\n</gpx>`;
+                    currentFile = `Route_${ts}.gpx`;
+                }
+            }
+            
+            document.getElementById('resultArea').innerText = currentOutput;
+            document.getElementById('statPoints').innerText = finalCoords.length;
+            document.getElementById('statDistance').innerText = calcDistance(finalCoords);
+            showToast("轉換成功");
+        }
+
+        function copyResult() {
+            if (!currentOutput) return alert('尚未轉換！');
+            const copyText = document.getElementById("hiddenCopyText");
+            copyText.value = currentOutput;
+            copyText.select();
+            document.execCommand("copy");
+            showToast("內容已複製到剪貼簿");
+        }
+
+        function downloadResult() {
+            if (!currentOutput) return;
+            const blob = new Blob([currentOutput], { type: 'text/xml' });
+            const a = document.createElement('a');
+            a.href = URL.createObjectURL(blob);
+            a.download = currentFile;
+            a.click();
+        }
+    </script>
+</body>
+</html>
