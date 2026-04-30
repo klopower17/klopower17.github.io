@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>GPX/RTE 生成器 v7.5</title>
+    <title>GPX/RTE 生成器 v8.2</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
@@ -32,11 +32,10 @@
 <body class="min-h-screen py-10 px-4">
     <div class="max-w-6xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-8">
         
-        <!-- 左側：輸入與設定 -->
         <div class="card flex flex-col border border-slate-200 overflow-hidden">
             <div class="bg-indigo-600 p-6 text-white">
                 <h1 class="text-2xl font-bold flex items-center gap-2">
-                    GPX 生成器 <span class="text-xs bg-indigo-400 px-2 py-1 rounded">v7.5</span>
+                    GPX 生成器 <span class="text-xs bg-indigo-400 px-2 py-1 rounded">v8.2</span>
                 </h1>
                 <p class="text-indigo-100 text-xs mt-1 italic">學術研究用</p>
             </div>
@@ -55,7 +54,7 @@
 
                 <div class="flex flex-col flex-1">
                     <div class="flex justify-between items-end mb-3">
-                        <label class="text-sm font-bold text-slate-700">📌 輸入原始座標 (點位 A)</label>
+                        <label class="text-sm font-bold text-slate-700">📌 輸入座標</label>
                         <div id="countBadge" class="bg-indigo-50 text-indigo-600 text-[10px] font-bold px-3 py-1 rounded-full uppercase tracking-widest">點位數：0</div>
                     </div>
                     <textarea id="coordsInput" class="w-full h-64 border-2 border-slate-100 rounded-2xl p-5 text-sm font-mono bg-slate-50 focus:bg-white focus:border-indigo-500 outline-none transition-all resize-none shadow-inner" 
@@ -80,7 +79,6 @@
             </div>
         </div>
 
-        <!-- 右側：結果預覽 -->
         <div class="card flex flex-col border border-slate-200 overflow-hidden">
             <div class="bg-slate-50 p-6 flex justify-between items-center border-b">
                 <h2 class="text-sm font-bold text-slate-500 uppercase tracking-widest">轉換結果預覽</h2>
@@ -154,14 +152,6 @@
             return { lat: lat2 * 180 / Math.PI, lon: lon2 * 180 / Math.PI };
         }
 
-        function calculateBearing(p1, p2) {
-            const lat1 = p1.lat * Math.PI / 180; const lat2 = p2.lat * Math.PI / 180;
-            const dLon = (p2.lon - p1.lon) * Math.PI / 180;
-            const y = Math.sin(dLon) * Math.cos(lat2);
-            const x = Math.cos(lat1) * Math.sin(lat2) - Math.sin(lat1) * Math.cos(lat2) * Math.cos(dLon);
-            return (Math.atan2(y, x) * 180 / Math.PI + 360) % 360;
-        }
-
         function calcDistance(coords) {
             if (coords.length < 2) return 0;
             let total = 0; const R = 6371;
@@ -187,14 +177,10 @@
 
             if (type === 'gpx-fruit') {
                 for (let i = 0; i < rawCoords.length; i++) {
-                    const A = rawCoords[i];
-                    finalCoords.push(A); 
-                    let bearing = (i < rawCoords.length - 1) ? calculateBearing(A, rawCoords[i+1]) : 0;
-                    const Center = destinationVincenty(A.lat, A.lon, bearing, offset);
-                    finalCoords.push(destinationVincenty(Center.lat, Center.lon, 45, radius));
-                    finalCoords.push(destinationVincenty(Center.lat, Center.lon, 135, radius));
-                    finalCoords.push(destinationVincenty(Center.lat, Center.lon, 225, radius));
-                    finalCoords.push(destinationVincenty(Center.lat, Center.lon, 315, radius));
+                    const Center = rawCoords[i];
+                    for (let angle = 0; angle < 360; angle += 45) {
+                        finalCoords.push(destinationVincenty(Center.lat, Center.lon, angle, radius));
+                    }
                 }
                 const fileName = `(種花_${dateStr})`;
                 currentOutput = `<?xml version="1.0" encoding="UTF-8"?>\n<gpx version="1.1" creator="warmwind-gpx">\n  <metadata><name>${fileName}</name></metadata>\n  <rte>\n    <name>${fileName}</name>\n` +
