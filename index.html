@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>GPX/RTE 生成器 v8.2</title>
+    <title>GPX/RTE 生成器 v8.2 優化版</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
@@ -57,10 +57,15 @@
                         <label class="text-sm font-bold text-slate-700">📌 輸入座標</label>
                         <div id="countBadge" class="bg-indigo-50 text-indigo-600 text-[10px] font-bold px-3 py-1 rounded-full uppercase tracking-widest">點位數：0</div>
                     </div>
-                    <textarea id="coordsInput" class="w-full h-64 border-2 border-slate-100 rounded-2xl p-5 text-sm font-mono bg-slate-50 focus:bg-white focus:border-indigo-500 outline-none transition-all resize-none shadow-inner" 
+                    <!-- 縮短長度：h-64 改為 h-32 -->
+                    <textarea id="coordsInput" class="w-full h-32 border-2 border-slate-100 rounded-2xl p-5 text-sm font-mono bg-slate-50 focus:bg-white focus:border-indigo-500 outline-none transition-all resize-none shadow-inner" 
                         placeholder="請貼上座標 (每行一組)..." oninput="updateCount()"></textarea>
                     
-                    <div class="mt-4 flex justify-start">
+                    <div class="mt-4 flex gap-3">
+                        <!-- 新增貼上按鈕 -->
+                        <button onclick="pasteFromClipboard()" class="w-1/3 bg-indigo-50 hover:bg-indigo-100 text-indigo-600 text-sm font-bold py-2.5 rounded-xl border border-indigo-200 transition flex items-center justify-center gap-2 shadow-sm">
+                            📋 貼上
+                        </button>
                         <button onclick="clearData()" class="w-1/3 bg-pink-50 hover:bg-pink-100 text-pink-500 text-sm font-bold py-2.5 rounded-xl border border-pink-200 transition flex items-center justify-center gap-2 shadow-sm">
                             🗑 清空資料
                         </button>
@@ -114,11 +119,25 @@
         let currentOutput = "";
         let currentFile = "";
 
+        // 頁面加載時預設清空
+        window.onload = () => { clearData(); };
+
         function showToast(msg) {
             const t = document.getElementById("toast");
             t.innerText = msg;
             t.className = "show";
             setTimeout(() => { t.className = ""; }, 2000);
+        }
+
+        async function pasteFromClipboard() {
+            try {
+                const text = await navigator.clipboard.readText();
+                document.getElementById('coordsInput').value = text;
+                updateCount();
+                showToast("已從剪貼簿貼上");
+            } catch (err) {
+                alert("無法讀取剪貼簿，請手動貼上。");
+            }
         }
 
         function clearData() {
@@ -128,7 +147,6 @@
             document.getElementById('statDistance').innerText = '-';
             document.getElementById('countBadge').innerText = '點位數：0';
             currentOutput = ""; currentFile = "";
-            showToast("已清空資料");
         }
 
         function parseCoords(text) {
@@ -169,9 +187,7 @@
             if (rawCoords.length === 0) return alert('請輸入座標！');
             
             const radius = parseFloat(document.getElementById('radius').value);
-            const offset = parseFloat(document.getElementById('offsetDist').value);
             let finalCoords = [];
-
             const now = new Date();
             const dateStr = (now.getMonth()+1).toString().padStart(2,'0') + now.getDate().toString().padStart(2,'0');
 
@@ -206,15 +222,22 @@
             document.getElementById('resultArea').innerText = currentOutput;
             document.getElementById('statPoints').innerText = finalCoords.length;
             document.getElementById('statDistance').innerText = calcDistance(finalCoords);
-            showToast("轉換成功");
+            
+            // 自動複製轉換後的語法
+            copyToClipboard(currentOutput);
+            showToast("轉換完成並已自動複製");
+        }
+
+        function copyToClipboard(text) {
+            const copyText = document.getElementById("hiddenCopyText");
+            copyText.value = text;
+            copyText.select();
+            document.execCommand("copy");
         }
 
         function copyResult() {
             if (!currentOutput) return alert('尚未轉換！');
-            const copyText = document.getElementById("hiddenCopyText");
-            copyText.value = currentOutput;
-            copyText.select();
-            document.execCommand("copy");
+            copyToClipboard(currentOutput);
             showToast("內容已複製到剪貼簿");
         }
 
