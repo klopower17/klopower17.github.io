@@ -4,31 +4,20 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>GPX/RTE 生成器 v9.5</title>
+    <title>GPX 生成器 v11.3</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
         body { font-family: 'Inter', -apple-system, sans-serif; background-color: #f8fafc; color: #334155; }
-        
-        .main-container { 
-            background: transparent; 
-            border-radius: 0; 
-            box-shadow: none;
-            border: none;
-        }
-        
+        .main-container { background: transparent; border-radius: 0; box-shadow: none; border: none; }
         .fixed-scroll-area { 
-            height: 128px; 
-            overflow-y: auto; 
-            scrollbar-width: thin; 
-            scrollbar-color: #94a3b8 transparent; 
-            background-color: #eff6ff; 
+            height: 128px; overflow-y: auto; scrollbar-width: thin; 
+            scrollbar-color: #94a3b8 transparent; background-color: #eff6ff; 
         }
         .fixed-scroll-area::-webkit-scrollbar { width: 4px; }
         .fixed-scroll-area::-webkit-scrollbar-thumb { background-color: #cbd5e1; border-radius: 10px; }
         .btn-action { transition: all 0.2s; }
         .btn-action:active { transform: scale(0.95); }
-        
         #toast {
             visibility: hidden; min-width: 200px; background-color: #1e293b; color: #fff;
             text-align: center; border-radius: 8px; padding: 10px; position: fixed;
@@ -43,12 +32,11 @@
     
     <div class="text-center">
         <h1 class="text-3xl font-bold flex items-center justify-center gap-2 text-slate-800">
-            GPX 生成器 <span class="text-xs text-slate-400 px-1 font-normal">v9.5</span>
+            GPX 生成器 <span class="text-xs text-slate-400 px-1 font-normal">v11.3</span>
         </h1>
     </div>
 
     <div class="main-container max-w-6xl w-full grid grid-cols-1 lg:grid-cols-2 lg:gap-1 mt-2">
-        
         <div class="px-8 py-4 space-y-3 lg:border-r border-slate-200">
             <div class="flex items-center gap-4 py-1 border-y border-slate-100">
                 <div class="flex items-center gap-2">
@@ -66,10 +54,8 @@
                     <label class="text-sm font-bold text-slate-500 uppercase tracking-widest">📌 輸入座標</label>
                     <div id="countBadge" class="bg-indigo-50 text-indigo-600 text-[10px] font-bold px-3 py-1 rounded-full uppercase tracking-widest">點位數：0</div>
                 </div>
-                
                 <div class="flex gap-3 items-stretch h-32">
-                    <textarea id="coordsInput" class="w-2/3 border border-slate-200 rounded-xl p-4 text-xs font-mono bg-white focus:border-indigo-400 outline-none resize-none transition-all shadow-sm" placeholder="請貼上座標 (每行一組)..."></textarea>
-                    
+                    <textarea id="coordsInput" class="w-2/3 border border-slate-200 rounded-xl p-4 text-xs font-mono bg-white focus:border-indigo-400 outline-none resize-none transition-all shadow-sm" placeholder="請貼上座標..."></textarea>
                     <div class="w-1/3 flex flex-col gap-2">
                         <button onclick="pasteFromClipboard()" class="flex-1 bg-indigo-50 hover:bg-indigo-100 text-indigo-600 text-xs font-bold rounded-lg transition border border-indigo-100 shadow-sm flex items-center justify-center">📋 貼上</button>
                         <button onclick="clearData()" class="flex-1 bg-pink-50 hover:bg-pink-100 text-pink-500 text-xs font-bold rounded-lg transition border border-pink-100 shadow-sm flex items-center justify-center">🗑 清空資料</button>
@@ -78,14 +64,17 @@
             </div>
 
             <div class="mt-2 border-t border-slate-200 pt-2 space-y-2">
-                <div class="grid grid-cols-3 gap-2">
-                    <!-- 修改按鈕文字為 trk -->
-                    <button onclick="process('gpx-track')" class="btn-action bg-green-600 hover:bg-green-700 text-white text-xs font-bold py-5 rounded-xl shadow-lg leading-tight">轉換 trk</button>
-                    <!-- 修改按鈕文字為 rte -->
-                    <button onclick="process('gpx-route')" class="btn-action bg-indigo-500 hover:bg-indigo-600 text-white text-xs font-bold py-5 rounded-xl shadow-lg leading-tight">轉換 rte</button>
-                    <button onclick="process('gpx-fruit')" class="btn-action bg-orange-500 hover:bg-orange-600 text-white text-xs font-bold py-3 rounded-xl shadow-lg text-center leading-tight">
-                        🍎 果實版<br>(種花_日期)
-                    </button>
+                <div class="grid grid-cols-2 gap-2">
+                    <button onclick="process('gpx-track')" class="btn-action bg-green-600 hover:bg-green-700 text-white text-[10px] font-bold py-4 rounded-xl shadow-lg leading-tight">轉換 trk</button>
+                    <button onclick="process('gpx-route')" class="btn-action bg-indigo-500 hover:bg-indigo-600 text-white text-[10px] font-bold py-4 rounded-xl shadow-lg leading-tight">轉換 rte</button>
+                </div>
+                <div class="flex gap-2 items-center">
+                    <button onclick="process('collect-fruit-2')" class="btn-action flex-1 bg-rose-600 hover:bg-rose-700 text-white text-[10px] font-bold py-4 rounded-xl shadow-lg leading-tight">🧺 傳送採果</button>
+                    <button onclick="process('gpx-fruit')" class="btn-action flex-1 bg-orange-500 hover:bg-orange-600 text-white text-[10px] font-bold py-4 rounded-xl shadow-lg leading-tight">🍎 種花</button>
+                    <div class="flex items-center gap-2 bg-white border border-slate-200 rounded-xl px-3 py-2 shadow-sm">
+                        <span class="text-[10px] font-bold text-slate-500 uppercase whitespace-nowrap">停留秒數</span>
+                        <input id="dwellTimeSec" type="number" value="3" class="w-12 border-b border-slate-300 text-sm text-center focus:border-rose-400 outline-none">
+                    </div>
                 </div>
             </div>
         </div>
@@ -101,81 +90,54 @@
                     <p id="statDistance" class="text-xl font-black text-indigo-600">-</p>
                 </div>
             </div>
-
             <div class="space-y-2">
-                <div class="flex justify-between items-center">
-                    <h2 class="text-sm font-bold text-slate-500 uppercase tracking-widest">📄 轉換結果預覽</h2>
-                </div>
-                
+                <div class="flex justify-between items-center"><h2 class="text-sm font-bold text-slate-500 uppercase tracking-widest">📄 轉換結果預覽</h2></div>
                 <div class="flex gap-3 items-stretch h-32">
                     <div class="w-2/3 fixed-scroll-area border border-slate-200 rounded-xl shadow-inner h-full">
                         <pre id="resultArea" class="p-4 text-[10px] font-mono text-slate-700 whitespace-pre-wrap"></pre>
                     </div>
-                    
                     <div class="w-1/3 flex flex-col gap-2">
                         <button onclick="copyResult()" class="flex-1 bg-slate-600 hover:bg-slate-700 text-white text-xs font-bold rounded-lg transition shadow-sm flex items-center justify-center text-center">複製<br>內容</button>
-                        <button onclick="downloadResult()" class="flex-1 bg-indigo-600 hover:bg-indigo-50 text-white text-xs font-bold rounded-lg transition shadow-sm flex items-center justify-center text-center">💾 下載<br>GPX</button>
+                        <button onclick="downloadResult()" class="flex-1 bg-indigo-600 hover:bg-indigo-50 text-white text-xs font-bold rounded-lg transition shadow-sm flex items-center justify-center text-center">💾 下載<br>檔案</button>
                     </div>
                 </div>
             </div>
         </div>
     </div>
-
     <div id="toast">操作成功</div>
     <textarea id="hiddenCopyText" style="position:absolute; left:-9999px;"></textarea>
 
     <script>
-        let currentOutput = "";
-        let currentFile = "";
-
+        let currentOutput = ""; let currentFile = "";
         window.onload = () => { clearData(); };
-
         function showToast(msg) {
-            const t = document.getElementById("toast");
-            t.innerText = msg;
-            t.className = "show";
+            const t = document.getElementById("toast"); t.innerText = msg; t.className = "show";
             setTimeout(() => { t.className = ""; }, 2000);
         }
-
         async function pasteFromClipboard() {
             try {
                 const text = await navigator.clipboard.readText();
-                if(text) {
-                    document.getElementById('coordsInput').value = text;
-                    updateCount();
-                    showToast("已從剪貼簿貼上");
-                }
+                if(text) { document.getElementById('coordsInput').value = text; updateCount(); showToast("已貼上"); }
             } catch (err) {
-                const manualText = prompt("請在此處貼上座標：");
-                if (manualText) {
-                    document.getElementById('coordsInput').value = manualText;
-                    updateCount();
-                    showToast("已貼上座標");
-                }
+                const manualText = prompt("請貼上座標：");
+                if (manualText) { document.getElementById('coordsInput').value = manualText; updateCount(); }
             }
         }
-
         function clearData() {
-            document.getElementById('coordsInput').value = '';
-            document.getElementById('resultArea').innerText = '';
-            document.getElementById('statPoints').innerText = '-';
-            document.getElementById('statDistance').innerText = '-';
-            document.getElementById('countBadge').innerText = '點位數：0';
-            currentOutput = ""; currentFile = "";
+            document.getElementById('coordsInput').value = ''; document.getElementById('resultArea').innerText = '';
+            document.getElementById('statPoints').innerText = '-'; document.getElementById('statDistance').innerText = '-';
+            document.getElementById('countBadge').innerText = '點位數：0'; currentOutput = ""; currentFile = "";
         }
-
         function parseCoords(text) {
             return text.split(/[\r\n]+/).map(line => {
                 const parts = line.match(/(-?\d+\.\d+)/g);
                 return parts && parts.length >= 2 ? { lat: parseFloat(parts[0]), lon: parseFloat(parts[1]) } : null;
             }).filter(p => p);
         }
-
         function updateCount() {
             const coords = parseCoords(document.getElementById('coordsInput').value);
             document.getElementById('countBadge').innerText = `點位數：${coords.length}`;
         }
-
         function destinationVincenty(lat, lon, brng, dist) {
             const R = 6378137; const d = dist / R;
             const lat1 = lat * Math.PI / 180; const lon1 = lon * Math.PI / 180;
@@ -184,7 +146,6 @@
             const lon2 = lon1 + Math.atan2(Math.sin(brngRad) * Math.sin(d) * Math.cos(lat1), Math.cos(d) - Math.sin(lat1) * Math.sin(lat2));
             return { lat: lat2 * 180 / Math.PI, lon: lon2 * 180 / Math.PI };
         }
-
         function calcDistance(coords) {
             if (coords.length < 2) return 0;
             let total = 0; const R = 6371;
@@ -196,28 +157,54 @@
             }
             return total.toFixed(3);
         }
-
         function process(type) {
             const rawCoords = parseCoords(document.getElementById('coordsInput').value);
             if (rawCoords.length === 0) return alert('請輸入座標！');
-            
             const radius = parseFloat(document.getElementById('radius').value);
-            let finalCoords = [];
             const now = new Date();
-            const dateStr = (now.getMonth()+1).toString().padStart(2,'0') + now.getDate().toString().padStart(2,'0');
+            const dateMMDD = (now.getMonth()+1).toString().padStart(2,'0') + now.getDate().toString().padStart(2,'0');
+            const timeHHmm = now.getHours().toString().padStart(2,'0') + now.getMinutes().toString().padStart(2,'0');
+            const dwellSec = parseFloat(document.getElementById('dwellTimeSec').value) || 0;
+            let finalCoords = [];
+            let currentName = "";
 
-            if (type === 'gpx-fruit') {
+            if (type === 'collect-fruit-2') {
+                // 傳送採果：新增 4 個點並移除原座標
+                currentName = `採果_${dateMMDD}${timeHHmm}`;
+                for (let i = 0; i < rawCoords.length; i++) {
+                    const center = rawCoords[i];
+                    // 移除原座標中心點，加入 4 個偏移點 (0°, 90°, 180°, 270°)
+                    finalCoords.push(destinationVincenty(center.lat, center.lon, 0, radius));
+                    finalCoords.push(destinationVincenty(center.lat, center.lon, 90, radius));
+                    finalCoords.push(destinationVincenty(center.lat, center.lon, 180, radius));
+                    finalCoords.push(destinationVincenty(center.lat, center.lon, 270, radius));
+                }
+                
+                let trkptsHtml = "";
+                finalCoords.forEach((c, index) => {
+                    const pointTime = new Date(now.getTime() + (index * dwellSec * 1000));
+                    trkptsHtml += `      <trkpt lat="${c.lat.toFixed(10)}" lon="${c.lon.toFixed(10)}">\n        <time>${pointTime.toISOString()}</time>\n      </trkpt>\n`;
+                });
+                currentOutput = `<?xml version="1.0" encoding="UTF-8"?>\n<gpx version="1.1" creator="GPX_Generator">\n  <trk>\n    <name>${currentName}</name>\n    <trkseg>\n${trkptsHtml}    </trkseg>\n  </trk>\n</gpx>`;
+                currentFile = `${currentName}.gpx`;
+
+            } else if (type === 'gpx-fruit') {
+                // 種花：保留原中心點概念的 8 個點
+                currentName = `種花_${dateMMDD}${timeHHmm}`;
                 for (let i = 0; i < rawCoords.length; i++) {
                     const Center = rawCoords[i];
                     for (let angle = 0; angle < 360; angle += 45) {
                         finalCoords.push(destinationVincenty(Center.lat, Center.lon, angle, radius));
                     }
                 }
-                const fileName = `(種花_${dateStr})`;
-                currentOutput = `<?xml version="1.0" encoding="UTF-8"?>\n<gpx version="1.1">\n  <rte><name>${fileName}</name>\n` +
-                                 finalCoords.map(c => `    <rtept lat="${c.lat.toFixed(10)}" lon="${c.lon.toFixed(10)}"></rtept>`).join('\n') +
-                                 `\n  </rte>\n</gpx>`;
-                currentFile = `${fileName}.gpx`;
+                let trkptsHtml = "";
+                finalCoords.forEach((c, index) => {
+                    const pointTime = new Date(now.getTime() + (index * 1000));
+                    trkptsHtml += `      <trkpt lat="${c.lat.toFixed(10)}" lon="${c.lon.toFixed(10)}">\n        <time>${pointTime.toISOString()}</time>\n      </trkpt>\n`;
+                });
+                currentOutput = `<?xml version="1.0" encoding="UTF-8"?>\n<gpx version="1.1">\n  <trk>\n    <name>${currentName}</name>\n    <trkseg>\n${trkptsHtml}    </trkseg>\n  </trk>\n</gpx>`;
+                currentFile = `${currentName}.gpx`;
+
             } else {
                 finalCoords = rawCoords;
                 const ts = now.toISOString().replace(/[:.-]/g, "").slice(0, 14);
@@ -233,35 +220,23 @@
                     currentFile = `Route_${ts}.gpx`;
                 }
             }
-            
             document.getElementById('resultArea').innerText = currentOutput;
             document.getElementById('statPoints').innerText = finalCoords.length;
             document.getElementById('statDistance').innerText = calcDistance(finalCoords);
-            
-            copyToClipboard(currentOutput);
-            showToast("轉換完成並已自動複製");
-        }
-
-        function copyToClipboard(text) {
             const copyText = document.getElementById("hiddenCopyText");
-            copyText.value = text;
-            copyText.select();
-            document.execCommand("copy");
+            copyText.value = currentOutput; copyText.select(); document.execCommand("copy");
+            showToast("轉換完成並已複製");
         }
-
         function copyResult() {
             if (!currentOutput) return alert('尚未轉換！');
-            copyToClipboard(currentOutput);
-            showToast("內容已複製到剪貼簿");
+            const copyText = document.getElementById("hiddenCopyText");
+            copyText.value = currentOutput; copyText.select(); document.execCommand("copy");
+            showToast("已複製");
         }
-
         function downloadResult() {
             if (!currentOutput) return;
             const blob = new Blob([currentOutput], { type: 'text/xml' });
-            const a = document.createElement('a');
-            a.href = URL.createObjectURL(blob);
-            a.download = currentFile;
-            a.click();
+            const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = currentFile; a.click();
         }
     </script>
 </body>
